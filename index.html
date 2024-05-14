@@ -1,28 +1,47 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="pt">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Meu Site de Anime</title>
-    <link rel="stylesheet" type="text/css" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Contador de Caracteres</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: #f7f7f7;
+  }
+  #app {
+    text-align: center;
+  }
+  textarea {
+    width: 300px;
+    height: 150px;
+  }
+  button {
+    display: block;
+    margin: 10px auto;
+  }
+</style>
 </head>
 <body>
-    <header>
-        <h1>Bem-vindo ao Meu Site de Anime</h1>
-        <nav>
-            <ul>
-                <li><a href="#animes">Animes</a></li>
-                <li><a href="#mangas">Mangás</a></li>
-                <li><a href="#novidades">Novidades</a></li>
-                <li><a href="#contato">Contato</a></li>
-            </ul>
-        </nav>
-    </header>
-    <main>
-        <!-- Conteúdo principal aqui -->
-    </main>
-    <footer>
-        <p>© 2024 Meu Site de Anime. Todos os direitos reservados.</p>
-    </footer>
+<div id="app">
+  <h1>Contador de Caracteres</h1>
+  <textarea id="texto" placeholder="Digite ou cole seu texto aqui..."></textarea>
+  <button onclick="contarCaracteres()">Contar Caracteres</button>
+  <p id="resultado">Contagem de caracteres: 0</p>
+</div>
+
+<script>
+function contarCaracteres() {
+  var texto = document.getElementById('texto').value;
+  var contador = texto.length;
+  document.getElementById('resultado').innerText = 'Contagem de caracteres: ' + contador;
+}
+</script>
 </body>
 </html>
