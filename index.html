@@ -1,47 +1,149 @@
 <!DOCTYPE html>
 <html lang="pt">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Contador de Caracteres</title>
-<style>
-  body {
-    font-family: Arial, sans-serif;
-    margin: 0;
-    padding: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    height: 100vh;
-    background-color: #f7f7f7;
-  }
-  #app {
-    text-align: center;
-  }
-  textarea {
-    width: 300px;
-    height: 150px;
-  }
-  button {
-    display: block;
-    margin: 10px auto;
-  }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contador de Caracteres</title>
+    <style>
+        :root {
+            --bg-color: #f7f7f7;
+            --text-color: #333;
+            --textarea-bg: #ffffff;
+            --textarea-border: #ddd;
+            --button-bg: #4CAF50;
+            --button-hover: #45a049;
+        }
+
+        [data-theme="dark"] {
+            --bg-color: #1a1a1a;
+            --text-color: #ffffff;
+            --textarea-bg: #2d2d2d;
+            --textarea-border: #404040;
+            --button-bg: #2196F3;
+            --button-hover: #1976D2;
+        }
+
+        body {
+            font-family: 'Roboto', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            transition: all 0.3s ease;
+        }
+
+        #app {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        textarea {
+            width: 100%;
+            max-width: 500px;
+            height: 200px;
+            padding: 1rem;
+            border: 2px solid var(--textarea-border);
+            border-radius: 8px;
+            background-color: var(--textarea-bg);
+            color: var(--text-color);
+            font-size: 1rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        textarea:focus {
+            outline: none;
+            border-color: var(--button-bg);
+            box-shadow: 0 0 10px rgba(33, 150, 243, 0.3);
+        }
+
+        button {
+            margin: 1rem 0;
+            padding: 0.8rem 1.5rem;
+            font-size: 1rem;
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        button:hover {
+            background-color: var(--button-hover);
+            transform: translateY(-2px);
+        }
+
+        #resultado {
+            font-size: 1.2rem;
+            margin-top: 1rem;
+        }
+
+        .theme-toggle {
+            position: fixed;
+            top: 1rem;
+            right: 1rem;
+            padding: 0.5rem 1rem;
+            background-color: var(--button-bg);
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.8rem;
+            }
+
+            textarea {
+                width: 90%;
+            }
+        }
+    </style>
 </head>
 <body>
-<div id="app">
-  <h1>Contador de Caracteres</h1>
-  <textarea id="texto" placeholder="Digite ou cole seu texto aqui..."></textarea>
-  <button onclick="contarCaracteres()">Contar Caracteres</button>
-  <p id="resultado">Contagem de caracteres: 0</p>
-</div>
+    <button class="theme-toggle" onclick="toggleTheme()">Alternar Tema</button>
+    <div id="app">
+        <h1>Contador de Caracteres</h1>
+        <textarea id="texto" placeholder="Digite ou cole seu texto aqui..." oninput="contarCaracteres()"></textarea>
+        <button onclick="contarCaracteres()">Contar Caracteres</button>
+        <p id="resultado">Contagem de caracteres: 0</p>
+    </div>
 
-<script>
-function contarCaracteres() {
-  var texto = document.getElementById('texto').value;
-  var contador = texto.length;
-  document.getElementById('resultado').innerText = 'Contagem de caracteres: ' + contador;
-}
-</script>
+    <script>
+        function contarCaracteres() {
+            var texto = document.getElementById('texto').value;
+            var contador = texto.length;
+            document.getElementById('resultado').innerText = 'Contagem de caracteres: ' + contador;
+        }
+
+        function toggleTheme() {
+            const body = document.body;
+            if (body.getAttribute('data-theme') === 'dark') {
+                body.removeAttribute('data-theme');
+            } else {
+                body.setAttribute('data-theme', 'dark');
+            }
+        }
+
+        // Verificar preferência do sistema
+        if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+            document.body.setAttribute('data-theme', 'dark');
+        }
+    </script>
 </body>
 </html>
