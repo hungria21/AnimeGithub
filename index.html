@@ -118,12 +118,6 @@
         #fileInput {
             display: none;
         }
-        
-        .filename-info {
-            font-size: 0.9rem;
-            margin-top: 0.5rem;
-            opacity: 0.7;
-        }
     </style>
 </head>
 <body>
@@ -132,7 +126,6 @@
         <div class="upload-area" id="dropZone">
             <p>Upload another one</p>
             <canvas id="previewCanvas" style="display: none; max-width: 100%; border-radius: 10px;"></canvas>
-            <div id="filenameInfo" class="filename-info"></div>
         </div>
 
         <div class="slider-container">
@@ -152,13 +145,12 @@
         const dropZone = document.getElementById('dropZone');
         const fileInput = document.getElementById('fileInput');
         const previewCanvas = document.getElementById('previewCanvas');
-        const filenameInfo = document.getElementById('filenameInfo');
         const slider = document.getElementById('pixelationSlider');
         const saveButton = document.getElementById('saveButton');
         const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
 
         let originalImage = null;
-        let originalFilename = '';
+        let originalFileName = ''; // Armazena o nome original do arquivo
         let maxWidth = 800; // Limite máximo de largura para processamento
         let isProcessing = false;
         let requestId = null;
@@ -172,12 +164,7 @@
 
         function handleFile(file) {
             if (file && file.type.startsWith('image/')) {
-                // Salva o nome do arquivo original
-                originalFilename = file.name;
-                
-                // Mostra o nome do arquivo no UI
-                filenameInfo.textContent = `File: ${originalFilename}`;
-                
+                originalFileName = file.name; // Armazena o nome original
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     originalImage = new Image();
@@ -240,19 +227,6 @@
             });
         }
 
-        // Function to generate a download filename
-        function getDownloadFilename() {
-            if (!originalFilename) return 'pixelated-image.png';
-            
-            // Get the file extension from the original name
-            const lastDotIndex = originalFilename.lastIndexOf('.');
-            const baseName = lastDotIndex !== -1 ? 
-                originalFilename.substring(0, lastDotIndex) : 
-                originalFilename;
-            
-            return `${baseName}-pixelated.png`;
-        }
-
         // Event Listeners
         dropZone.addEventListener('click', () => fileInput.click());
 
@@ -289,30 +263,23 @@
 
         saveButton.addEventListener('click', () => {
             if (previewCanvas) {
-                // Método simplificado para download com nome personalizado
-                // Compatível com Telegram
-                const filename = getDownloadFilename();
-                
-                // Convertendo o canvas para um blob
-                previewCanvas.toBlob(function(blob) {
-                    // Criando um objeto URL temporário para o blob
-                    const blobUrl = URL.createObjectURL(blob);
+                previewCanvas.toBlob((blob) => {
+                    const link = document.createElement('a');
+                    const fileNameWithoutExtension = originalFileName.replace(/\.[^/.]+$/, "");
+                    link.download = `${fileNameWithoutExtension}-pixelated.png`;
+                    const objectURL = URL.createObjectURL(blob);
+                    link.href = objectURL;
                     
-                    // Criando um elemento de link para download
-                    const downloadLink = document.createElement('a');
-                    downloadLink.href = blobUrl;
-                    downloadLink.download = filename; // Define o nome do arquivo
-                    downloadLink.style.display = 'none';
+                    // Adiciona tratamento de limpeza após o download
+                    link.addEventListener('click', () => {
+                        setTimeout(() => {
+                            URL.revokeObjectURL(objectURL);
+                            link.remove();
+                        }, 100);
+                    });
                     
-                    // Adiciona o link ao documento e simula o clique
-                    document.body.appendChild(downloadLink);
-                    downloadLink.click();
-                    
-                    // Limpa após o download
-                    setTimeout(() => {
-                        URL.revokeObjectURL(blobUrl);
-                        document.body.removeChild(downloadLink);
-                    }, 100);
+                    document.body.appendChild(link);
+                    link.click();
                 }, 'image/png');
             }
         });
