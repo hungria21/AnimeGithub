@@ -150,21 +150,22 @@
         const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
 
         let originalImage = null;
-        let originalFileName = ''; // Armazena o nome original do arquivo
-        let maxWidth = 800; // Limite máximo de largura para processamento
+        let originalFileName = '';
+        let maxWidth = 800;
         let isProcessing = false;
         let requestId = null;
 
         function resizeImage(image, maxWidth) {
             const ratio = Math.min(1, maxWidth / image.width);
-            const width = image.width * ratio;
-            const height = image.height * ratio;
-            return { width, height };
+            return {
+                width: image.width * ratio,
+                height: image.height * ratio
+            };
         }
 
         function handleFile(file) {
-            if (file && file.type.startsWith('image/')) {
-                originalFileName = file.name; // Armazena o nome original
+            if (file?.type.startsWith('image/')) {
+                originalFileName = file.name;
                 const reader = new FileReader();
                 reader.onload = (e) => {
                     originalImage = new Image();
@@ -186,40 +187,24 @@
             if (!originalImage || isProcessing) return;
 
             isProcessing = true;
-
-            // Limpa o timeout anterior
-            if (requestId) {
-                cancelAnimationFrame(requestId);
-            }
+            if (requestId) cancelAnimationFrame(requestId);
 
             requestId = requestAnimationFrame(() => {
                 const { width, height } = previewCanvas;
-
-                // Limpa o canvas
                 ctx.clearRect(0, 0, width, height);
 
                 if (value === 0) {
-                    // Desenha a imagem original
                     ctx.drawImage(originalImage, 0, 0, width, height);
                 } else {
-                    // Cria um canvas temporário para o efeito de pixelação
+                    const pixelSize = Math.max(1, Math.floor(value));
                     const tempCanvas = document.createElement('canvas');
                     const tempCtx = tempCanvas.getContext('2d');
-
-                    // Calcula o tamanho do pixel baseado no valor do slider
-                    const pixelSize = Math.max(1, Math.floor(value));
-
-                    // Define o tamanho do canvas temporário
+                    
                     tempCanvas.width = width / pixelSize;
                     tempCanvas.height = height / pixelSize;
-
-                    // Desenha a imagem reduzida no canvas temporário
                     tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
-
-                    // Desativa a suavização
+                    
                     ctx.imageSmoothingEnabled = false;
-
-                    // Desenha a imagem pixelada no canvas principal
                     ctx.drawImage(tempCanvas, 0, 0, width, height);
                 }
 
@@ -227,61 +212,44 @@
             });
         }
 
-        // Event Listeners
+        // Event handlers
         dropZone.addEventListener('click', () => fileInput.click());
-
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = '#2196f3';
         });
-
-        dropZone.addEventListener('dragleave', () => {
-            dropZone.style.borderColor = '#444';
-        });
-
+        dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = '#444');
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = '#444';
             handleFile(e.dataTransfer.files[0]);
         });
+        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
 
-        fileInput.addEventListener('change', (e) => {
-            handleFile(e.target.files[0]);
-        });
-
-        // Otimização do evento do slider
+        // Optimized slider input
         let lastUpdate = 0;
-        const updateInterval = 1000 / 60; // 60fps
-
         slider.addEventListener('input', (e) => {
-            const now = Date.now();
-            if (now - lastUpdate >= updateInterval) {
+            if (Date.now() - lastUpdate >= 16) {
                 pixelateImage(e.target.value);
-                lastUpdate = now;
+                lastUpdate = Date.now();
             }
         });
 
+        // Download handling
         saveButton.addEventListener('click', () => {
-            if (previewCanvas) {
-                previewCanvas.toBlob((blob) => {
-                    const link = document.createElement('a');
-                    const fileNameWithoutExtension = originalFileName.replace(/\.[^/.]+$/, "");
-                    link.download = `${fileNameWithoutExtension}-pixelated.png`;
-                    const objectURL = URL.createObjectURL(blob);
-                    link.href = objectURL;
-                    
-                    // Adiciona tratamento de limpeza após o download
-                    link.addEventListener('click', () => {
-                        setTimeout(() => {
-                            URL.revokeObjectURL(objectURL);
-                            link.remove();
-                        }, 100);
-                    });
-                    
-                    document.body.appendChild(link);
-                    link.click();
-                }, 'image/png');
-            }
+            if (!previewCanvas) return;
+            
+            const baseName = originalFileName.replace(/\.[^/.]+$/, '');
+            const link = document.createElement('a');
+            link.download = `${baseName}-pixelated.png`;
+            link.href = previewCanvas.toDataURL('image/png');
+            
+            document.body.appendChild(link);
+            link.click();
+            
+            setTimeout(() => {
+                link.remove();
+            }, 100);
         });
     </script>
 </body>
