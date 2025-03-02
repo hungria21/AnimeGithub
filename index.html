@@ -1,25 +1,162 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
+<html lang="pt-br">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Download de Vídeos do YouTube</title>
+    <title>Baixar Vídeos do YouTube</title>
+    <script src="https://cdn.jsdelivr.net/npm/ytdl-core@4.11.2/dist/ytdl-core.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: Arial, sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+
+        h1 {
+            color: #ff0000;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+
+        button {
+            padding: 10px 20px;
+            background: #ff0000;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            transition: background 0.3s;
+        }
+
+        button:hover {
+            background: #cc0000;
+        }
+
+        .result {
+            margin-top: 20px;
+        }
+
+        .thumbnail {
+            max-width: 100%;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+
+        .download-buttons {
+            display: grid;
+            gap: 10px;
+        }
+
+        .download-btn {
+            background: #4CAF50;
+            color: white;
+            padding: 10px;
+            text-decoration: none;
+            border-radius: 4px;
+            text-align: center;
+            transition: background 0.3s;
+        }
+
+        .download-btn:hover {
+            background: #45a049;
+        }
+
+        .error {
+            color: #ff0000;
+            padding: 10px;
+            background: #ffe6e6;
+            border-radius: 4px;
+            margin-top: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>Download de Vídeos do YouTube</h1>
-    <input type="text" id="videoUrl" placeholder="Cole o link do YouTube aqui">
-    <button onclick="downloadVideo()">Baixar</button>
+    <div class="container">
+        <h1>YouTube Video Downloader</h1>
+        <div class="input-group">
+            <input type="url" id="urlInput" placeholder="Cole o link do YouTube aqui...">
+            <button onclick="getVideoInfo()">Buscar</button>
+        </div>
+        <div class="result" id="result"></div>
+    </div>
 
     <script>
-        function downloadVideo() {
-            const videoUrl = document.getElementById('videoUrl').value;
-            if (videoUrl) {
-                // Aqui você pode adicionar a lógica para baixar o vídeo
-                // Nota: Isso é apenas um exemplo e não funcionará sem uma API ou serviço de backend
-                alert('Funcionalidade de download não implementada.');
-            } else {
-                alert('Por favor, cole um link válido do YouTube.');
+        async function getVideoInfo() {
+            const url = document.getElementById('urlInput').value;
+            const resultDiv = document.getElementById('result');
+            
+            if (!ytdl.validateURL(url)) {
+                showError('Link do YouTube inválido!');
+                return;
             }
+
+            try {
+                const info = await ytdl.getInfo(url);
+                showResults(info);
+            } catch (error) {
+                showError('Erro ao buscar informações do vídeo');
+            }
+        }
+
+        function showResults(info) {
+            const resultDiv = document.getElementById('result');
+            const formats = info.formats.filter(format => 
+                format.container === 'mp4' && 
+                format.qualityLabel && 
+                format.hasVideo && 
+                format.hasAudio
+            );
+
+            const thumbnails = info.videoDetails.thumbnails;
+            const thumbnail = thumbnails[thumbnails.length - 1].url;
+
+            resultDiv.innerHTML = `
+                <h2>${info.videoDetails.title}</h2>
+                <img class="thumbnail" src="${thumbnail}">
+                <div class="download-buttons">
+                    ${formats.map(format => `
+                        <a href="${format.url}" class="download-btn" download>
+                            Baixar ${format.qualityLabel} (${format.container.toUpperCase()})
+                        </a>
+                    `).join('')}
+                </div>
+            `;
+        }
+
+        function showError(message) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `
+                <div class="error">${message}</div>
+            `;
         }
     </script>
 </body>
