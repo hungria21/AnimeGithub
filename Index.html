@@ -289,40 +289,30 @@
 
         saveButton.addEventListener('click', () => {
             if (previewCanvas) {
-                // Convert canvas to blob instead of data URL
+                // Método simplificado para download com nome personalizado
+                // Compatível com Telegram
+                const filename = getDownloadFilename();
+                
+                // Convertendo o canvas para um blob
                 previewCanvas.toBlob(function(blob) {
-                    // Create download filename based on original
-                    const filename = getDownloadFilename();
-                    
-                    // Create URL from blob
+                    // Criando um objeto URL temporário para o blob
                     const blobUrl = URL.createObjectURL(blob);
                     
-                    // Create an invisible iframe to trigger proper download
-                    const iframe = document.createElement('iframe');
-                    iframe.style.display = 'none';
-                    document.body.appendChild(iframe);
+                    // Criando um elemento de link para download
+                    const downloadLink = document.createElement('a');
+                    downloadLink.href = blobUrl;
+                    downloadLink.download = filename; // Define o nome do arquivo
+                    downloadLink.style.display = 'none';
                     
-                    // Write a form to the iframe that will submit and trigger download
-                    iframe.contentDocument.write(`
-                        <form method="GET" action="${blobUrl}">
-                            <input type="hidden" name="filename" value="${filename}">
-                        </form>
-                        <script>
-                            document.forms[0].setAttribute('action', "${blobUrl}");
-                            const downloadLink = document.createElement('a');
-                            downloadLink.href = "${blobUrl}";
-                            downloadLink.download = "${filename}";
-                            downloadLink.style.display = 'none';
-                            document.body.appendChild(downloadLink);
-                            downloadLink.click();
-                            setTimeout(() => {
-                                URL.revokeObjectURL("${blobUrl}");
-                                window.parent.document.body.removeChild(iframe);
-                            }, 1000);
-                        </script>
-                    `);
+                    // Adiciona o link ao documento e simula o clique
+                    document.body.appendChild(downloadLink);
+                    downloadLink.click();
                     
-                    iframe.contentDocument.close();
+                    // Limpa após o download
+                    setTimeout(() => {
+                        URL.revokeObjectURL(blobUrl);
+                        document.body.removeChild(downloadLink);
+                    }, 100);
                 }, 'image/png');
             }
         });
