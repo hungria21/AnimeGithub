@@ -212,21 +212,25 @@
             });
         }
 
-        // Event handlers
+        // Eventos de upload/arraste
         dropZone.addEventListener('click', () => fileInput.click());
         dropZone.addEventListener('dragover', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = '#2196f3';
         });
-        dropZone.addEventListener('dragleave', () => dropZone.style.borderColor = '#444');
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#444';
+        });
         dropZone.addEventListener('drop', (e) => {
             e.preventDefault();
             dropZone.style.borderColor = '#444';
             handleFile(e.dataTransfer.files[0]);
         });
-        fileInput.addEventListener('change', (e) => handleFile(e.target.files[0]));
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
 
-        // Optimized slider input
+        // Otimização de slider
         let lastUpdate = 0;
         slider.addEventListener('input', (e) => {
             if (Date.now() - lastUpdate >= 16) {
@@ -235,21 +239,22 @@
             }
         });
 
-        // Download handling
+        // Download via Blob
         saveButton.addEventListener('click', () => {
             if (!previewCanvas) return;
-            
             const baseName = originalFileName.replace(/\.[^/.]+$/, '');
-            const link = document.createElement('a');
-            link.download = `${baseName}-pixelated.png`;
-            link.href = previewCanvas.toDataURL('image/png');
             
-            document.body.appendChild(link);
-            link.click();
-            
-            setTimeout(() => {
-                link.remove();
-            }, 100);
+            previewCanvas.toBlob((blob) => {
+                if (!blob) return;
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `${baseName}-pixelated.png`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+            }, 'image/png');
         });
     </script>
 </body>
