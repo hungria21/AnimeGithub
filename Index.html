@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Pixelator</title>
+    <style>
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1b1e;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        }
+
+        .container {
+            max-width: 500px;
+            width: 90%;
+            margin: 2rem auto;
+            text-align: center;
+        }
+
+        .upload-area {
+            border: 2px dashed #444;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #2a2b2e;
+        }
+
+        #preview {
+            max-width: 100%;
+            margin: 1rem 0;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .slider-container {
+            margin: 2rem 0;
+            padding: 1rem;
+            background-color: #2a2b2e;
+            border-radius: 10px;
+        }
+
+        .slider-label {
+            margin-bottom: 1rem;
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #2196f3;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #2196f3;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+
+        input[type="range"]:active::-moz-range-thumb {
+            transform: scale(1.1);
+        }
+
+        .button {
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
+        }
+
+        .button:hover {
+            background-color: #1976d2;
+        }
+
+        #fileInput {
+            display: none;
+        }
+        
+        .filename-info {
+            font-size: 0.9rem;
+            margin-top: 0.5rem;
+            opacity: 0.7;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="upload-area" id="dropZone">
+            <p>Upload another one</p>
+            <canvas id="previewCanvas" style="display: none; max-width: 100%; border-radius: 10px;"></canvas>
+            <div id="filenameInfo" class="filename-info"></div>
+        </div>
+
+        <div class="slider-container">
+            <span class="slider-label">How pixelated you want it</span>
+            <input type="range" 
+                   id="pixelationSlider" 
+                   min="0" 
+                   max="50" 
+                   value="0"
+                   step="1">
+        </div>
+
+        <button class="button" id="saveButton">Save for myself</button>
+    </div>
+
+    <script>
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const filenameInfo = document.getElementById('filenameInfo');
+        const slider = document.getElementById('pixelationSlider');
+        const saveButton = document.getElementById('saveButton');
+        const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
+
+        let originalImage = null;
+        let originalFilename = '';
+        let maxWidth = 800; // Limite máximo de largura para processamento
+        let isProcessing = false;
+        let requestId = null;
+
+        function resizeImage(image, maxWidth) {
+            const ratio = Math.min(1, maxWidth / image.width);
+            const width = image.width * ratio;
+            const height = image.height * ratio;
+            return { width, height };
+        }
+
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                // Salva o nome do arquivo original
+                originalFilename = file.name;
+                
+                // Mostra o nome do arquivo no UI
+                filenameInfo.textContent = `File: ${originalFilename}`;
+                
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        const { width, height } = resizeImage(originalImage, maxWidth);
+                        previewCanvas.width = width;
+                        previewCanvas.height = height;
+                        previewCanvas.style.display = 'block';
+                        slider.value = 0;
+                        pixelateImage(0);
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function pixelateImage(value) {
+            if (!originalImage || isProcessing) return;
+
+            isProcessing = true;
+
+            // Limpa o timeout anterior
+            if (requestId) {
+                cancelAnimationFrame(requestId);
+            }
+
+            requestId = requestAnimationFrame(() => {
+                const { width, height } = previewCanvas;
+
+                // Limpa o canvas
+                ctx.clearRect(0, 0, width, height);
+
+                if (value === 0) {
+                    // Desenha a imagem original
+                    ctx.drawImage(originalImage, 0, 0, width, height);
+                } else {
+                    // Cria um canvas temporário para o efeito de pixelação
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    // Calcula o tamanho do pixel baseado no valor do slider
+                    const pixelSize = Math.max(1, Math.floor(value));
+
+                    // Define o tamanho do canvas temporário
+                    tempCanvas.width = width / pixelSize;
+                    tempCanvas.height = height / pixelSize;
+
+                    // Desenha a imagem reduzida no canvas temporário
+                    tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
+
+                    // Desativa a suavização
+                    ctx.imageSmoothingEnabled = false;
+
+                    // Desenha a imagem pixelada no canvas principal
+                    ctx.drawImage(tempCanvas, 0, 0, width, height);
+                }
+
+                isProcessing = false;
+            });
+        }
+
+        // Function to generate a download filename
+        function getDownloadFilename() {
+            if (!originalFilename) return 'pixelated-image.png';
+            
+            // Get the file extension from the original name
+            const lastDotIndex = originalFilename.lastIndexOf('.');
+            const baseName = lastDotIndex !== -1 ? 
+                originalFilename.substring(0, lastDotIndex) : 
+                originalFilename;
+            
+            return `${baseName}-pixelated.png`;
+        }
+
+        // Event Listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#2196f3';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#444';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#444';
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Otimização do evento do slider
+        let lastUpdate = 0;
+        const updateInterval = 1000 / 60; // 60fps
+
+        slider.addEventListener('input', (e) => {
+            const now = Date.now();
+            if (now - lastUpdate >= updateInterval) {
+                pixelateImage(e.target.value);
+                lastUpdate = now;
+            }
+        });
+
+        saveButton.addEventListener('click', () => {
+            if (previewCanvas) {
+                // Convert canvas to blob instead of data URL
+                previewCanvas.toBlob(function(blob) {
+                    // Create download filename based on original
+                    const filename = getDownloadFilename();
+                    
+                    // Create URL from blob
+                    const blobUrl = URL.createObjectURL(blob);
+                    
+                    // Create an invisible iframe to trigger proper download
+                    const iframe = document.createElement('iframe');
+                    iframe.style.display = 'none';
+                    document.body.appendChild(iframe);
+                    
+                    // Write a form to the iframe that will submit and trigger download
+                    iframe.contentDocument.write(`
+                        <form method="GET" action="${blobUrl}">
+                            <input type="hidden" name="filename" value="${filename}">
+                        </form>
+                        <script>
+                            document.forms[0].setAttribute('action', "${blobUrl}");
+                            const downloadLink = document.createElement('a');
+                            downloadLink.href = "${blobUrl}";
+                            downloadLink.download = "${filename}";
+                            downloadLink.style.display = 'none';
+                            document.body.appendChild(downloadLink);
+                            downloadLink.click();
+                            setTimeout(() => {
+                                URL.revokeObjectURL("${blobUrl}");
+                                window.parent.document.body.removeChild(iframe);
+                            }, 1000);
+                        </script>
+                    `);
+                    
+                    iframe.contentDocument.close();
+                }, 'image/png');
+            }
+        });
+    </script>
+</body>
+</html>
