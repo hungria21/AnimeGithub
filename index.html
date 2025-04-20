@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Image Pixelator (Telegram Compatible)</title>
+    <title>Image Pixelator</title>
     <style>
         body {
             margin: 0;
@@ -119,31 +119,9 @@
             display: none;
         }
         
-        #downloadLink {
+        #downloadButtons {
             display: none;
-            text-decoration: none;
-            background-color: #4CAF50;
-            color: white;
-            border: none;
-            padding: 1rem;
-            border-radius: 10px;
-            cursor: pointer;
-            font-size: 1rem;
-            margin: 0.5rem 0;
-            width: 100%;
-            font-weight: 600;
-            text-align: center;
-            transition: background-color 0.2s ease;
-        }
-        
-        #downloadLink:hover {
-            background-color: #45a049;
-        }
-        
-        #messageArea {
-            margin-top: 1rem;
-            color: #4CAF50;
-            font-size: 0.9rem;
+            margin-top: 1.5rem;
         }
     </style>
 </head>
@@ -168,9 +146,9 @@
                    step="1">
         </div>
 
-        <button class="button" id="saveButton" style="display: none;">Generate Download Link</button>
-        <a id="downloadLink" download="pixelated-image.png">Download Image</a>
-        <div id="messageArea"></div>
+        <div id="downloadButtons">
+            <button class="button" id="saveButton">Download</button>
+        </div>
     </div>
 
     <script>
@@ -180,8 +158,7 @@
         const slider = document.getElementById('pixelationSlider');
         const sliderContainer = document.getElementById('sliderContainer');
         const saveButton = document.getElementById('saveButton');
-        const downloadLink = document.getElementById('downloadLink');
-        const messageArea = document.getElementById('messageArea');
+        const downloadButtons = document.getElementById('downloadButtons');
         const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
 
         let originalImage = null;
@@ -207,9 +184,7 @@
                         previewCanvas.height = height;
                         previewCanvas.style.display = 'block';
                         sliderContainer.style.display = 'block';
-                        saveButton.style.display = 'block';
-                        downloadLink.style.display = 'none';
-                        messageArea.textContent = '';
+                        downloadButtons.style.display = 'block';
                         slider.value = 0;
                         pixelateImage(0);
                     };
@@ -300,14 +275,25 @@
 
         saveButton.addEventListener('click', () => {
             if (previewCanvas) {
-                try {
-                    const imageData = previewCanvas.toDataURL('image/png');
-                    downloadLink.href = imageData;
-                    downloadLink.style.display = 'block';
-                    messageArea.textContent = 'Link de download gerado! Toque no botão verde abaixo para baixar a imagem.';
-                } catch (e) {
-                    messageArea.textContent = 'Erro ao gerar o link: ' + e.message;
+                // Método sem atributo "download" para forçar o comportamento "downloadfile.bin" no Telegram
+                const imageData = previewCanvas.toDataURL('image/png');
+                
+                // Converter o dataURL para Blob
+                const byteString = atob(imageData.split(',')[1]);
+                const mimeType = imageData.split(',')[0].split(':')[1].split(';')[0];
+                
+                const ab = new ArrayBuffer(byteString.length);
+                const ia = new Uint8Array(ab);
+                for (let i = 0; i < byteString.length; i++) {
+                    ia[i] = byteString.charCodeAt(i);
                 }
+                const blob = new Blob([ab], {type: mimeType});
+                
+                // Criar uma URL para o blob sem especificar o tipo de arquivo
+                const blobUrl = URL.createObjectURL(blob);
+                
+                // Abrir em uma nova janela/aba para forçar o download como "downloadfile.bin"
+                window.open(blobUrl);
             }
         });
     </script>
