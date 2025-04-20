@@ -1,163 +1,315 @@
 <!DOCTYPE html>
-<html lang="pt-br">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Baixar Vídeos do YouTube</title>
-    <script src="https://cdn.jsdelivr.net/npm/ytdl-core@4.11.2/dist/ytdl-core.min.js"></script>
+    <title>Image Pixelator (Telegram Compatible)</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: Arial, sans-serif;
-        }
-
         body {
-            background: #f0f2f5;
-            padding: 20px;
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #1a1b1e;
+            color: #ffffff;
+            font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
         }
 
         .container {
-            max-width: 800px;
-            margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        }
-
-        h1 {
-            color: #ff0000;
+            max-width: 500px;
+            width: 90%;
+            margin: 2rem auto;
             text-align: center;
-            margin-bottom: 20px;
         }
 
-        .input-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+        .upload-area {
+            border: 2px dashed #444;
+            border-radius: 10px;
+            padding: 2rem;
+            margin: 1rem 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background-color: #2a2b2e;
         }
 
-        input {
-            flex: 1;
-            padding: 10px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 16px;
+        #preview {
+            max-width: 100%;
+            margin: 1rem 0;
+            border-radius: 10px;
+            display: none;
         }
 
-        button {
-            padding: 10px 20px;
-            background: #ff0000;
+        .slider-container {
+            margin: 2rem 0;
+            padding: 1rem;
+            background-color: #2a2b2e;
+            border-radius: 10px;
+        }
+
+        .slider-label {
+            margin-bottom: 1rem;
+            display: block;
+            font-size: 0.9rem;
+            opacity: 0.9;
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #444;
+            border-radius: 3px;
+            outline: none;
+            margin: 1rem 0;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 24px;
+            height: 24px;
+            background: #2196f3;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 24px;
+            height: 24px;
+            background: #2196f3;
+            border-radius: 50%;
+            cursor: pointer;
+            border: none;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            transition: transform 0.1s ease;
+        }
+
+        input[type="range"]:active::-webkit-slider-thumb {
+            transform: scale(1.1);
+        }
+
+        input[type="range"]:active::-moz-range-thumb {
+            transform: scale(1.1);
+        }
+
+        .button {
+            background-color: #2196f3;
             color: white;
             border: none;
-            border-radius: 4px;
+            padding: 1rem;
+            border-radius: 10px;
             cursor: pointer;
-            transition: background 0.3s;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+            width: 100%;
+            font-weight: 600;
+            transition: background-color 0.2s ease;
         }
 
-        button:hover {
-            background: #cc0000;
+        .button:hover {
+            background-color: #1976d2;
         }
 
-        .result {
-            margin-top: 20px;
+        #fileInput {
+            display: none;
         }
-
-        .thumbnail {
-            max-width: 100%;
-            border-radius: 8px;
-            margin-bottom: 10px;
-        }
-
-        .download-buttons {
-            display: grid;
-            gap: 10px;
-        }
-
-        .download-btn {
-            background: #4CAF50;
-            color: white;
-            padding: 10px;
+        
+        #downloadLink {
+            display: none;
             text-decoration: none;
-            border-radius: 4px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            padding: 1rem;
+            border-radius: 10px;
+            cursor: pointer;
+            font-size: 1rem;
+            margin: 0.5rem 0;
+            width: 100%;
+            font-weight: 600;
             text-align: center;
-            transition: background 0.3s;
+            transition: background-color 0.2s ease;
         }
-
-        .download-btn:hover {
-            background: #45a049;
+        
+        #downloadLink:hover {
+            background-color: #45a049;
         }
-
-        .error {
-            color: #ff0000;
-            padding: 10px;
-            background: #ffe6e6;
-            border-radius: 4px;
-            margin-top: 10px;
+        
+        #messageArea {
+            margin-top: 1rem;
+            color: #4CAF50;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>YouTube Video Downloader</h1>
-        <div class="input-group">
-            <input type="url" id="urlInput" placeholder="Cole o link do YouTube aqui...">
-            <button onclick="getVideoInfo()">Buscar</button>
+        <h1>Image Pixelator</h1>
+        <p>Upload an image and adjust the pixelation level</p>
+        
+        <input type="file" id="fileInput" accept="image/*">
+        <div class="upload-area" id="dropZone">
+            <p>Tap here to upload an image or drop it here</p>
+            <canvas id="previewCanvas" style="display: none; max-width: 100%; border-radius: 10px;"></canvas>
         </div>
-        <div class="result" id="result"></div>
+
+        <div class="slider-container" style="display: none;" id="sliderContainer">
+            <span class="slider-label">Pixelation level</span>
+            <input type="range" 
+                   id="pixelationSlider" 
+                   min="0" 
+                   max="50" 
+                   value="0"
+                   step="1">
+        </div>
+
+        <button class="button" id="saveButton" style="display: none;">Generate Download Link</button>
+        <a id="downloadLink" download="pixelated-image.png">Download Image</a>
+        <div id="messageArea"></div>
     </div>
 
     <script>
-        async function getVideoInfo() {
-            const url = document.getElementById('urlInput').value;
-            const resultDiv = document.getElementById('result');
-            
-            if (!ytdl.validateURL(url)) {
-                showError('Link do YouTube inválido!');
-                return;
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const previewCanvas = document.getElementById('previewCanvas');
+        const slider = document.getElementById('pixelationSlider');
+        const sliderContainer = document.getElementById('sliderContainer');
+        const saveButton = document.getElementById('saveButton');
+        const downloadLink = document.getElementById('downloadLink');
+        const messageArea = document.getElementById('messageArea');
+        const ctx = previewCanvas.getContext('2d', { willReadFrequently: true });
+
+        let originalImage = null;
+        let maxWidth = 800; // Limite máximo de largura para processamento
+        let isProcessing = false;
+        let requestId = null;
+
+        function resizeImage(image, maxWidth) {
+            const ratio = Math.min(1, maxWidth / image.width);
+            const width = image.width * ratio;
+            const height = image.height * ratio;
+            return { width, height };
+        }
+
+        function handleFile(file) {
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    originalImage = new Image();
+                    originalImage.onload = () => {
+                        const { width, height } = resizeImage(originalImage, maxWidth);
+                        previewCanvas.width = width;
+                        previewCanvas.height = height;
+                        previewCanvas.style.display = 'block';
+                        sliderContainer.style.display = 'block';
+                        saveButton.style.display = 'block';
+                        downloadLink.style.display = 'none';
+                        messageArea.textContent = '';
+                        slider.value = 0;
+                        pixelateImage(0);
+                    };
+                    originalImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+
+        function pixelateImage(value) {
+            if (!originalImage || isProcessing) return;
+
+            isProcessing = true;
+
+            // Limpa o timeout anterior
+            if (requestId) {
+                cancelAnimationFrame(requestId);
             }
 
-            try {
-                const info = await ytdl.getInfo(url);
-                showResults(info);
-            } catch (error) {
-                showError('Erro ao buscar informações do vídeo');
+            requestId = requestAnimationFrame(() => {
+                const { width, height } = previewCanvas;
+
+                // Limpa o canvas
+                ctx.clearRect(0, 0, width, height);
+
+                if (value === 0) {
+                    // Desenha a imagem original
+                    ctx.drawImage(originalImage, 0, 0, width, height);
+                } else {
+                    // Cria um canvas temporário para o efeito de pixelação
+                    const tempCanvas = document.createElement('canvas');
+                    const tempCtx = tempCanvas.getContext('2d');
+
+                    // Calcula o tamanho do pixel baseado no valor do slider
+                    const pixelSize = Math.max(1, Math.floor(value));
+
+                    // Define o tamanho do canvas temporário
+                    tempCanvas.width = width / pixelSize;
+                    tempCanvas.height = height / pixelSize;
+
+                    // Desenha a imagem reduzida no canvas temporário
+                    tempCtx.drawImage(originalImage, 0, 0, tempCanvas.width, tempCanvas.height);
+
+                    // Desativa a suavização
+                    ctx.imageSmoothingEnabled = false;
+
+                    // Desenha a imagem pixelada no canvas principal
+                    ctx.drawImage(tempCanvas, 0, 0, width, height);
+                }
+
+                isProcessing = false;
+            });
+        }
+
+        // Event Listeners
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#2196f3';
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.style.borderColor = '#444';
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.style.borderColor = '#444';
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        // Otimização do evento do slider
+        let lastUpdate = 0;
+        const updateInterval = 1000 / 60; // 60fps
+
+        slider.addEventListener('input', (e) => {
+            const now = Date.now();
+            if (now - lastUpdate >= updateInterval) {
+                pixelateImage(e.target.value);
+                lastUpdate = now;
             }
-        }
+        });
 
-        function showResults(info) {
-            const resultDiv = document.getElementById('result');
-            const formats = info.formats.filter(format => 
-                format.container === 'mp4' && 
-                format.qualityLabel && 
-                format.hasVideo && 
-                format.hasAudio
-            );
-
-            const thumbnails = info.videoDetails.thumbnails;
-            const thumbnail = thumbnails[thumbnails.length - 1].url;
-
-            resultDiv.innerHTML = `
-                <h2>${info.videoDetails.title}</h2>
-                <img class="thumbnail" src="${thumbnail}">
-                <div class="download-buttons">
-                    ${formats.map(format => `
-                        <a href="${format.url}" class="download-btn" download>
-                            Baixar ${format.qualityLabel} (${format.container.toUpperCase()})
-                        </a>
-                    `).join('')}
-                </div>
-            `;
-        }
-
-        function showError(message) {
-            const resultDiv = document.getElementById('result');
-            resultDiv.innerHTML = `
-                <div class="error">${message}</div>
-            `;
-        }
+        saveButton.addEventListener('click', () => {
+            if (previewCanvas) {
+                try {
+                    const imageData = previewCanvas.toDataURL('image/png');
+                    downloadLink.href = imageData;
+                    downloadLink.style.display = 'block';
+                    messageArea.textContent = 'Link de download gerado! Toque no botão verde abaixo para baixar a imagem.';
+                } catch (e) {
+                    messageArea.textContent = 'Erro ao gerar o link: ' + e.message;
+                }
+            }
+        });
     </script>
 </body>
 </html>
